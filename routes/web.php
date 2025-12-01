@@ -52,13 +52,14 @@ Route::middleware('auth')->group(function () {
         
         // Admin akan melihat dashboard sebagai halaman utama
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard'); 
+
         
         // Rute Home untuk Admin (Redirect dari middleware auth)
         // Sudah ditangani di RedirectIfAuthenticated.php, tapi jaga-jaga
         // Route::get('/', function () { return redirect()->route('dashboard'); })->name('home.admin');
         
         // Manajemen Produk (CRUD) - WAJIB diaktifkan
-        Route::resource('produk', ProductController::class)->names('produk');
+        Route::resource('produk', ProductController::class)->except(['create', 'edit', 'show']);
     });
 
 });
