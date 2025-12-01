@@ -41,11 +41,12 @@ Route::middleware('auth')->group(function () {
     // --- Rute untuk KASIR (Role: kasir) ---
     Route::middleware('role:kasir')->group(function () {
         Route::get('/kasir', [TransactionController::class, 'index'])->name('kasir');
-        
+        Route::post('/kasir/checkout', [TransactionController::class, 'store'])->name('kasir.store');
         // Rute Home untuk Kasir (Redirect dari middleware auth)
         // Sudah ditangani di RedirectIfAuthenticated.php, tapi jaga-jaga
         // Route::get('/', function () { return redirect()->route('kasir'); })->name('home.kasir');
     });
+    
     
     // --- Rute untuk ADMIN (Role: admin) ---
     Route::middleware('role:admin')->group(function () {
@@ -59,7 +60,7 @@ Route::middleware('auth')->group(function () {
         // Route::get('/', function () { return redirect()->route('dashboard'); })->name('home.admin');
         
         // Manajemen Produk (CRUD) - WAJIB diaktifkan
-        Route::resource('produk', ProductController::class)->except(['create', 'edit', 'show']);
+        Route::resource('produk', ProductController::class)->except(['show']);
     });
 
 });

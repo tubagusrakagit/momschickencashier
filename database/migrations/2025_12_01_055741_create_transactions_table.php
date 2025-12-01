@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('subtotal'); // Total sebelum pajak
             $table->integer('tax_amount'); // Jumlah pajak (10%)
             $table->integer('total_amount'); // Total akhir yang dibayar
-            $table->enum('payment_method', ['Cash', 'QRIS', 'E-Wallet'])->default('Cash'); // Metode pembayaran (FR-11)
+           $table->string('payment_method', 20);
             $table->enum('status', ['paid', 'pending', 'cancelled'])->default('paid'); // Status transaksi
             $table->timestamps();
         });
