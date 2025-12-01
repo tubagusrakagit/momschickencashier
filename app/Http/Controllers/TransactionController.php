@@ -107,4 +107,11 @@ class TransactionController extends Controller
             ], 500);
         }
     }
+    public function print($id)
+    {
+        // Ambil transaksi beserta detail dan produknya
+        $transaction = Transaction::with(['details.product', 'user'])->findOrFail($id);
+
+        return view('kasir.struk', compact('transaction'));
+    }
 }

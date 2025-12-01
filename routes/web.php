@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:kasir')->group(function () {
         Route::get('/kasir', [TransactionController::class, 'index'])->name('kasir');
         Route::post('/kasir/checkout', [TransactionController::class, 'store'])->name('kasir.store');
+        Route::get('/kasir/struk/{id}', [TransactionController::class, 'print'])->name('kasir.print');
         // Rute Home untuk Kasir (Redirect dari middleware auth)
         // Sudah ditangani di RedirectIfAuthenticated.php, tapi jaga-jaga
         // Route::get('/', function () { return redirect()->route('kasir'); })->name('home.kasir');

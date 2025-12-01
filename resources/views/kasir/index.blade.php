@@ -307,7 +307,14 @@
 
             if (response.ok && result.status === 'success') {
                 // 5. JIKA SUKSES
-                showModal('Transaksi Berhasil Disimpan! ✅', 'alert');
+                showModal('Transaksi Berhasil Disimpan! Mencetak Struk...', 'alert');
+                
+                // --- BAGIAN BARU: Buka Struk di Tab Baru ---
+                if (result.transaction_id) {
+                    // URL untuk print: /kasir/struk/{id}
+                    const printUrl = `/kasir/struk/${result.transaction_id}`;
+                    window.open(printUrl, '_blank');
+                }
                 
                 // Reset Keranjang & Reload Halaman agar No Transaksi baru
                 setTimeout(() => {
