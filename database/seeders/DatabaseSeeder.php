@@ -3,23 +3,35 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB; // Tambahkan DB
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // 1. Buat User Admin
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin Mom\'s Chicken',
+            'username' => 'admin', // Tambahkan username
+            'role' => 'admin',     // Tambahkan role
+            'password' => Hash::make('password'),
         ]);
+
+        // 2. SEEDING KATEGORI DULU (Manual)
+        // Kita isi kategori standar restoran
+        $categories = ['Makanan', 'Minuman', 'Paket Hemat', 'Snack'];
+        foreach ($categories as $cat) {
+            DB::table('categories')->insertOrIgnore([
+                'name' => $cat,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // 3. Baru buat Produk (karena produk butuh category_id)
+        Product::factory(20)->create();
     }
 }

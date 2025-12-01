@@ -10,8 +10,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // PASTIKAN BLOK INI SUDAH BENAR
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Mendaftarkan alias menggunakan metode 'alias' (bukan withAliases)
+        $middleware->alias(['role', \App\Http\Middleware\RoleMiddleware::class]); // <-- FIX DI BARIS INI
+        
+        // Di sini Anda juga bisa menambahkan middleware global jika diperlukan
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
