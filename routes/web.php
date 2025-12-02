@@ -5,6 +5,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController; 
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,10 +56,10 @@ Route::middleware('auth')->group(function () {
         // Admin akan melihat dashboard sebagai halaman utama
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard'); 
 
-        
-        // Rute Home untuk Admin (Redirect dari middleware auth)
-        // Sudah ditangani di RedirectIfAuthenticated.php, tapi jaga-jaga
-        // Route::get('/', function () { return redirect()->route('dashboard'); })->name('home.admin');
+        // Route Laporan ---
+        Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('/laporan/validasi/{id}', [ReportController::class, 'toggleValidasi'])->name('reports.validate');
+        Route::get('/laporan/cetak', [ReportController::class, 'print'])->name('reports.print');
         
         // Manajemen Produk (CRUD) - WAJIB diaktifkan
         Route::resource('produk', ProductController::class)->except(['show']);

@@ -134,12 +134,10 @@
     </div>
 </div>
 
-<!-- BAGIAN BARU: CUSTOM MODAL/POPUP -->
-<!-- Modal Default (Untuk Alert/Peringatan Kecil) -->
+<!-- BAGIAN MODAL UMUM (ALERTS/CONFIRMS) -->
 <div id="defaultModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
     <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full transform transition-transform duration-300 scale-95">
         <div class="flex items-center space-x-3 mb-4">
-            <!-- Icon Alert/Error/Success -->
             <svg id="defaultModalIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D93630" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <h3 id="defaultModalTitle" class="text-lg font-bold text-gray-800">Perhatian!</h3>
         </div>
@@ -151,7 +149,7 @@
     </div>
 </div>
 
-<!-- BAGIAN BARU: MODAL CHECKOUT KUSTOM -->
+<!-- BAGIAN MODAL CHECKOUT KUSTOM (FINAL) -->
 <div id="checkoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
     <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-transform duration-300 scale-95">
         <h3 class="text-2xl font-black text-gray-800 border-b pb-2 mb-4">Konfirmasi Pembayaran</h3>
@@ -161,24 +159,30 @@
                 <span>Metode Pembayaran</span>
                 <span id="checkoutMethod" class="font-bold text-brand-red"></span>
             </div>
-            <div class="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span id="checkoutSubtotal" class="font-semibold"></span>
-            </div>
-            <div class="flex justify-between text-gray-600">
-                <span>Pajak (10%)</span>
-                <span id="checkoutTax" class="font-semibold"></span>
-            </div>
-            <div class="flex justify-between text-gray-800 text-xl font-black pt-2 border-t mt-2">
+            <div class="flex justify-between text-gray-800 font-extrabold text-xl pt-2">
                 <span>Total Bayar</span>
-                <span id="checkoutTotal" class="text-brand-red"></span>
+                <span id="checkoutTotalDisplay" class="text-brand-red"></span>
             </div>
-            
-            <!-- Input Bayar (untuk Tunai) - Akan kita tambahkan nanti -->
-            <!-- <div class="mt-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Uang Tunai Diterima (Rp)</label>
-                <input type="number" id="cashReceived" class="w-full px-4 py-2 border rounded-xl focus:border-brand-gold">
-            </div> -->
+
+            <!-- KONTEN DINAMIS KHUSUS TUNAI/NON-TUNAI -->
+            <div id="cashInputContainer" class="mt-4 border-t pt-4 space-y-3">
+                <div class="mt-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Uang Diterima (Rp)</label>
+                    <!-- Input Cash Wajib Ada -->
+                    <input type="number" id="cashReceived" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:border-brand-gold text-lg font-bold text-gray-800"
+                           placeholder="0" oninput="calculateChange()">
+                </div>
+                
+                <div class="flex justify-between text-gray-800 text-lg font-black pt-2 border-t mt-2">
+                    <span>Kembalian</span>
+                    <span id="changeDue" class="text-green-600">Rp 0</span>
+                </div>
+            </div>
+
+            <div id="nonCashMessage" class="hidden text-center bg-blue-50 border border-blue-200 p-3 rounded-xl text-sm text-blue-700">
+                Mohon konfirmasi pembayaran non-tunai dari pelanggan.
+            </div>
             
         </div>
         
@@ -186,12 +190,13 @@
             <button onclick="closeCheckoutModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-xl transition duration-150">
                 Batal
             </button>
-            <button onclick="confirmCheckout()" class="bg-brand-red hover:bg-red-700 text-white font-bold py-2 px-6 rounded-xl transition duration-150 shadow-md shadow-brand-red/40">
+            <button id="confirmCheckoutButton" onclick="confirmCheckout()" class="bg-brand-red hover:bg-red-700 text-white font-bold py-2 px-6 rounded-xl transition duration-150 shadow-md shadow-brand-red/40" disabled>
                 Lanjut Bayar
             </button>
         </div>
     </div>
 </div>
+
 
 <!-- SCRIPT LOGIC -->
 <script>
@@ -199,10 +204,11 @@
     const taxRate = 0.10;
     let selectedPaymentMethod = 'Tunai';
     let modalCallback = null;
+    let currentTotal = 0; // Menyimpan nilai total murni (angka)
 
     // --- FUNGSI CUSTOM MODAL (Default Modal) ---
-
     function showModal(message, type = 'alert', callback = null) {
+        // Logika showModal tetap sama
         const modal = document.getElementById('defaultModal');
         const modalTitle = document.getElementById('defaultModalTitle');
         const modalMessage = document.getElementById('defaultModalMessage');
@@ -213,18 +219,17 @@
 
         modalMessage.innerText = message;
         
-        // Atur judul dan tombol
         if (type === 'confirm') {
             modalTitle.innerText = 'Konfirmasi Tindakan';
             modalConfirm.classList.remove('hidden');
-            modalIcon.setAttribute('stroke', '#FFC300'); // Gold for confirm
+            modalIcon.setAttribute('stroke', '#FFC300');
         } else {
             modalTitle.innerText = 'Perhatian';
             modalConfirm.classList.add('hidden');
-            modalIcon.setAttribute('stroke', '#D93630'); // Red for error/alert
+            modalIcon.setAttribute('stroke', '#D93630');
         }
         
-        modalIcon.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'; // Icon Alert Default
+        modalIcon.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'; 
 
         setTimeout(() => {
             modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -244,8 +249,32 @@
         }
     }
     
-    // --- FUNGSI MODAL CHECKOUT ---
-    
+    // --- FUNGSI BARU: KALKULASI KEMBALIAN ---
+    function calculateChange() {
+        const cashInput = document.getElementById('cashReceived');
+        const changeDisplay = document.getElementById('changeDue');
+        const confirmBtn = document.getElementById('confirmCheckoutButton');
+        
+        const received = Number(cashInput.value);
+        const total = currentTotal; 
+        
+        let change = 0;
+
+        if (received >= total) {
+            change = received - total;
+            confirmBtn.disabled = false; // Uang cukup, tombol aktif
+        } else {
+            change = 0;
+            confirmBtn.disabled = true; // Uang kurang, tombol non-aktif
+        }
+        
+        changeDisplay.innerText = formatRupiah(change);
+        // Menandai dengan warna merah jika uang diterima kurang
+        changeDisplay.classList.toggle('text-red-500', received < total);
+        changeDisplay.classList.toggle('text-green-600', received >= total);
+    }
+
+    // --- FUNGSI MODAL CHECKOUT BARU ---
     function showCheckoutModal() {
         if (cart.length === 0) {
             showModal('Keranjang kosong! Silakan pilih produk terlebih dahulu.', 'alert');
@@ -253,14 +282,39 @@
         }
         
         const totals = calculateTotals(true);
+        currentTotal = totals.total; // Simpan nilai total angka murni
+        
         const modal = document.getElementById('checkoutModal');
         
         // Isi detail summary di modal
         document.getElementById('checkoutMethod').innerText = selectedPaymentMethod;
-        document.getElementById('checkoutSubtotal').innerText = formatRupiah(totals.subtotal);
-        document.getElementById('checkoutTax').innerText = formatRupiah(totals.tax);
-        document.getElementById('checkoutTotal').innerText = formatRupiah(totals.total);
-
+        document.getElementById('checkoutTotalDisplay').innerText = formatRupiah(currentTotal);
+        
+        const cashContainer = document.getElementById('cashInputContainer');
+        const nonCashMsg = document.getElementById('nonCashMessage');
+        const confirmBtn = document.getElementById('confirmCheckoutButton');
+        
+        // Atur tampilan modal berdasarkan metode pembayaran
+        if (selectedPaymentMethod === 'Tunai') {
+            cashContainer.classList.remove('hidden');
+            nonCashMsg.classList.add('hidden');
+            
+            // Reset input cash dan hitung kembalian awal
+            const cashInput = document.getElementById('cashReceived');
+            cashInput.value = ''; 
+            calculateChange();
+            
+            // Auto focus ke input cash
+            setTimeout(() => cashInput.focus(), 300);
+            
+        } else {
+            cashContainer.classList.add('hidden');
+            nonCashMsg.classList.remove('hidden');
+            nonCashMsg.innerHTML = `Mohon konfirmasi pembayaran **${selectedPaymentMethod}** dari pelanggan.`;
+            
+            confirmBtn.disabled = false; // Non-Tunai langsung bisa lanjut
+        }
+        
         // Tampilkan modal
         setTimeout(() => {
             modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -274,8 +328,20 @@
         modal.querySelector('div').classList.add('scale-95');
     }
 
-    // GANTI FUNGSI confirmCheckout DENGAN INI:
+    // GANTI FUNGSI confirmCheckout DENGAN LOGIKA UANG DITERIMA
     async function confirmCheckout() {
+        const cashInput = document.getElementById('cashReceived');
+        let uangDiterima = 0;
+
+        // Validasi Uang Diterima hanya untuk Tunai
+        if (selectedPaymentMethod === 'Tunai') {
+            uangDiterima = Number(cashInput.value);
+            if (uangDiterima < currentTotal) {
+                showModal('Uang diterima kurang dari total pembayaran!', 'alert');
+                return;
+            }
+        }
+        
         // 1. Tutup modal konfirmasi dulu
         closeCheckoutModal();
 
@@ -285,11 +351,13 @@
             transaction_code: '{{ $transactionCode }}',
             payment_method: selectedPaymentMethod,
             total_amount: totals.total,
+            // Tambahkan data uang diterima (opsional) untuk laporan di masa depan
+            cash_received: uangDiterima, 
             cart: cart, // Array keranjang
             _token: '{{ csrf_token() }}' // Token keamanan wajib Laravel
         };
 
-        // 3. Tampilkan Loading (opsional, pakai modal alert sementara)
+        // 3. Tampilkan Loading 
         showModal('Sedang memproses transaksi...', 'alert');
 
         try {
@@ -309,18 +377,17 @@
                 // 5. JIKA SUKSES
                 showModal('Transaksi Berhasil Disimpan! Mencetak Struk...', 'alert');
                 
-                // --- BAGIAN BARU: Buka Struk di Tab Baru ---
+                // --- Buka Struk di Tab Baru ---
                 if (result.transaction_id) {
-                    // URL untuk print: /kasir/struk/{id}
                     const printUrl = `/kasir/struk/${result.transaction_id}`;
                     window.open(printUrl, '_blank');
                 }
                 
-                // Reset Keranjang & Reload Halaman agar No Transaksi baru
+                // Reset Keranjang & Reload Halaman
                 setTimeout(() => {
                     window.location.reload(); 
-                }, 1500);
-                
+                }, 1000); // 1 detik jeda
+
             } else {
                 // 6. JIKA GAGAL DARI SERVER
                 console.error(result);
@@ -335,7 +402,7 @@
     }
 
 
-    // --- FUNGSI UTAMA LAINNYA ---
+    // --- FUNGSI UTAMA LAINNYA (TIDAK DIUBAH) ---
 
     function addToCart(element) {
         try {
@@ -457,7 +524,6 @@
         updateCartUI();
     }
 
-    // Fungsi Kalkulasi yang mengembalikan objek total
     function calculateTotals(returnObject = false) {
         let subtotal = 0;
         cart.forEach(item => { subtotal += (Number(item.price) * item.qty); });
@@ -504,10 +570,11 @@
         });
     });
 
-    // 7. Checkout Process
+    // 7. Checkout Process (Diubah untuk panggil modal checkout baru)
     function processCheckout() {
-        showCheckoutModal(); // Panggil modal checkout baru
+        showCheckoutModal();
     }
+
 
     window.onload = function() {
         updateCartUI();
